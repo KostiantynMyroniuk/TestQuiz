@@ -14,5 +14,6 @@ namespace TestQuiz.Domain.Interfaces
         Task<IEnumerable<Test>> GetAll();
         Task<Test?> GetById(int id);
         Task<bool> IsTitleExists(string title);
+        IQueryable<Test> GetQueryable();
     }
 }

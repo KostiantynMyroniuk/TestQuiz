@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,21 +50,25 @@ namespace TestQuiz.Application.Services
 
         public async Task<List<TestDto>> GetAll()
         {
-            var tests = await _repository.GetAll();
-
-            return _mapper.Map<List<TestDto>>(tests);
+            return await _repository.GetQueryable()
+                                .AsNoTracking()
+                                .ProjectTo<TestDto>(_mapper.ConfigurationProvider)
+                                .ToListAsync();
         }
 
         public async Task<TestDto> GetById(int id)
         {
-            var test = await _repository.GetById(id);
-
+            var test =  await _repository.GetQueryable()
+                                    .Where(t => t.Id == id)
+                                    .ProjectTo<TestDto>(_mapper.ConfigurationProvider)
+                                    .FirstOrDefaultAsync();
+                                    
             if (test == null)
             {
                 throw new KeyNotFoundException($"Test with id:{id} not found");
             }
 
-            return _mapper.Map<TestDto>(test);
+            return test;
         }
     }
 }

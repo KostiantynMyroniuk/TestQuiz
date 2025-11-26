@@ -31,8 +31,9 @@ namespace TestQuiz.Application.Config
                 cfg.CreateMap<Answer, AnswerDto>();
 
                 cfg.CreateMap<CreateTestDto, Test>();
-                cfg.CreateMap<Test, TestDto>();
-                
+                cfg.CreateMap<Test, TestDto>()
+                    .ForMember(dest => dest.QuestionsCount, opt => opt.MapFrom(src => src.Questions.Count()));
+
             });
 
             return services;

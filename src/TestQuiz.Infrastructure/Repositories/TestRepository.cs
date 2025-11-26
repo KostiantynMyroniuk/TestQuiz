@@ -33,7 +33,9 @@ namespace TestQuiz.Infrastructure.Repositories
 
         public async Task<IEnumerable<Test>> GetAll()
         {
-            return await _context.Tests.ToListAsync();
+            return await _context.Tests
+                            .Include(t => t.Questions)
+                            .ToListAsync();
         }
 
         public async Task<Test?> GetById(int id)
@@ -45,6 +47,11 @@ namespace TestQuiz.Infrastructure.Repositories
         {
             return await _context.Tests
                                 .AnyAsync(x => x.Title == title);
+        }
+
+        public IQueryable<Test> GetQueryable()
+        {
+            return _context.Tests.AsQueryable();
         }
     }
 }
