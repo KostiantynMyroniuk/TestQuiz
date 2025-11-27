@@ -34,13 +34,17 @@ namespace TestQuiz.Infrastructure.Repositories
         public async Task<IEnumerable<Question>> GetAll()
         {
             return await _context.Questions
+                                .AsNoTracking()
                                 .Include(q => q.Answers)
                                 .ToListAsync();
         }
 
-        public async Task<Question?> GetById(int id)
+        public async Task<Question?> GetByIdWithOptions(int id)
         {
-            return await _context.Questions.FindAsync(id);
+            return await _context.Questions
+                            .AsNoTracking()
+                            .Include(q => q.Answers)
+                            .FirstOrDefaultAsync(t => t.Id == id);
         }
     }
 }

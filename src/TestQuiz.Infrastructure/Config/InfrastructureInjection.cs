@@ -23,6 +23,9 @@ namespace TestQuiz.Infrastructure.Config
                 options.UseSqlServer(config.GetConnectionString("DefaultConnection"));
             });
 
+            services.AddScoped<IApplicationDbContext>(provider =>
+                provider.GetRequiredService<ApplicationDbContext>());
+
             services.AddScoped<IUserRepository, UserRepository>();
 
             services.AddScoped<IJwtProvider, JwtProvider>();

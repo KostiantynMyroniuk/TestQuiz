@@ -22,6 +22,8 @@ namespace TestQuiz.Application.Config
             services.AddScoped<ITestService, TestService>();
             services.AddScoped<IQuestionService, QuestionService>();
 
+            services.AddDistributedMemoryCache();
+
             services.AddAutoMapper(cfg =>
             {
                 cfg.CreateMap<Question, QuestionDto>();

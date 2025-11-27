@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,13 +17,16 @@ namespace TestQuiz.Application.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
+        private readonly IApplicationDbContext _context;
         private readonly IMapper _mapper;
 
         public QuestionService(IQuestionRepository questionRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IApplicationDbContext context)
         {
             _questionRepository = questionRepository;
             _mapper = mapper;
+            _context = context;
         }
 
         public async Task Add(CreateQuestionDto questionDto)
@@ -33,9 +38,11 @@ namespace TestQuiz.Application.Services
 
         public async Task<List<QuestionDto>> GetAll()
         {
-            var questions = await _questionRepository.GetAll();
+            return await _context.Questions
+                                .AsNoTracking()
+                                .ProjectTo<QuestionDto>(_mapper.ConfigurationProvider)
+                                .ToListAsync();
 
-            return _mapper.Map<List<QuestionDto>>(questions);
         }
     }
 }

@@ -7,10 +7,9 @@ using TestQuiz.Application.Dtos.Question;
 
 namespace TestQuiz.Application.Interfaces
 {
-    public interface IQuestionService
+    public interface IExamService
     {
-        Task Add(CreateQuestionDto questionDto);
-        Task<List<QuestionDto>> GetAll();
-        
+        Task<QuestionDto?> GetNextQuestion(int userId, int testId);
+
     }
 }

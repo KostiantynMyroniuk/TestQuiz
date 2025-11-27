@@ -31,13 +31,6 @@ namespace TestQuiz.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Test>> GetAll()
-        {
-            return await _context.Tests
-                            .Include(t => t.Questions)
-                            .ToListAsync();
-        }
-
         public async Task<Test?> GetById(int id)
         {
             return await _context.Tests.FindAsync(id);
@@ -45,13 +38,8 @@ namespace TestQuiz.Infrastructure.Repositories
 
         public async Task<bool> IsTitleExists(string title)
         {
-            return await _context.Tests
-                                .AnyAsync(x => x.Title == title);
+            return await _context.Tests.AnyAsync(x => x.Title == title);
         }
 
-        public IQueryable<Test> GetQueryable()
-        {
-            return _context.Tests.AsQueryable();
-        }
     }
 }

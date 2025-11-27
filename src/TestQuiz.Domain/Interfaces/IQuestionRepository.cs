@@ -11,7 +11,5 @@ namespace TestQuiz.Domain.Interfaces
     {
         Task Add(Question question);
         Task Delete(Question question);
-        Task<IEnumerable<Question>> GetAll();
-        Task<Question?> GetById(int id);
     }
 }
