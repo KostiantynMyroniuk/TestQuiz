@@ -11,5 +11,8 @@ namespace TestQuiz.Domain.Interfaces
     {
         Task Add(Question question);
         Task Delete(Question question);
+        Task<List<int>> GetIdsByTest(int quizId);
+        Task<Question?> GetById(int id);
+        Task<Question?> GetByIdWithOptions(int id);
     }
 }

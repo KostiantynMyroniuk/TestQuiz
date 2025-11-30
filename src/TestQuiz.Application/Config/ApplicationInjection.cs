@@ -21,6 +21,7 @@ namespace TestQuiz.Application.Config
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<ITestService, TestService>();
             services.AddScoped<IQuestionService, QuestionService>();
+            services.AddScoped<IExamService, ExamService>();
 
             services.AddDistributedMemoryCache();
 

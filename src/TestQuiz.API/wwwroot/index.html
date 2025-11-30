@@ -215,6 +215,53 @@
             margin-bottom: 2rem;
         }
 
+        /* --- EXAM VIEW (NEW) --- */
+        #examView {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: var(--shadow);
+        }
+
+        .question-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .exam-answers {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .exam-answer-option {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .exam-answer-option:hover {
+                background-color: #f9fafb;
+                border-color: var(--primary);
+            }
+
+            .exam-answer-option.selected {
+                background-color: #e0e7ff;
+                border-color: var(--primary);
+                color: var(--primary);
+                font-weight: bold;
+            }
+
         /* --- MODALS --- */
         .modal-overlay {
             position: fixed;
@@ -241,7 +288,6 @@
             overflow-y: auto;
         }
 
-        /* Збільшуємо ширину для модалки питань */
         .modal-lg {
             max-width: 700px;
         }
@@ -375,10 +421,28 @@
 
             <div class="actions-row">
                 <button class="btn btn-outline" onclick="openQuestionModal()">+ Додати питання</button>
-                <button class="btn btn-primary" onclick="alert('Логіка проходження тесту ще не реалізована')">Почати тестування</button>
+                <button class="btn btn-primary" onclick="startExam()">Почати тестування</button>
             </div>
 
             <button class="btn btn-ghost" onclick="showListView()">← Повернутися до списку</button>
+        </div>
+
+        <div id="examView" class="fade-in">
+            <div class="question-card">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 10px; color: var(--text-muted);">
+                    <span>Тестування</span>
+                    <button class="btn btn-ghost btn-sm" onclick="finishExamEarly()">Перервати</button>
+                </div>
+
+                <h3 id="examQuestionText">Завантаження питання...</h3>
+
+                <div id="examOptionsContainer" class="exam-answers">
+                </div>
+
+                <div style="text-align: right;">
+                    <button id="nextBtn" class="btn btn-primary" onclick="submitAndNext()">Відповісти</button>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -459,7 +523,11 @@
         // --- STATE ---
         let isRegisterMode = false;
         let pendingTestId = null;
-        let currentOpenTestId = null; // ID поточного відкритого тесту
+        let currentOpenTestId = null;
+
+        // Стан для екзамену
+        let currentSessionId = null;
+        let currentSelectedAnswer = null;
 
         // --- HELPERS (Token Handling) ---
         function isTokenExpired(token) {
@@ -532,14 +600,14 @@
 
             if (token) {
                 nav.innerHTML = `
-                                <span style="color: var(--text-muted); margin-right: 10px;">Привіт, <b>${getUserName()}</b></span>
-                                <button class="btn btn-outline" onclick="logout(false)">Вийти</button>
-                            `;
+                                    <span style="color: var(--text-muted); margin-right: 10px;">Привіт, <b>${getUserName()}</b></span>
+                                    <button class="btn btn-outline" onclick="logout(false)">Вийти</button>
+                                `;
             } else {
                 nav.innerHTML = `
-                                <button class="btn btn-ghost" onclick="openAuthModal(false)">Вхід</button>
-                                <button class="btn btn-primary" onclick="openAuthModal(true)">Реєстрація</button>
-                            `;
+                                    <button class="btn btn-ghost" onclick="openAuthModal(false)">Вхід</button>
+                                    <button class="btn btn-primary" onclick="openAuthModal(true)">Реєстрація</button>
+                                `;
             }
         }
 
@@ -610,13 +678,13 @@
                     card.className = 'card';
                     card.onclick = () => tryOpenTest(test.id);
                     card.innerHTML = `
-                                    <h3>${test.title}</h3>
-                                    <p>${test.description || 'Опис відсутній'}</p>
-                                    <div class="meta">
-                                        <span>by ${test.author}</span>
-                                        <span class="badge">Питань: ${test.questionsCount}</span>
-                                    </div>
-                                `;
+                                        <h3>${test.title}</h3>
+                                        <p>${test.description || 'Опис відсутній'}</p>
+                                        <div class="meta">
+                                            <span>by ${test.author}</span>
+                                            <span class="badge">Питань: ${test.questionsCount}</span>
+                                        </div>
+                                    `;
                     grid.appendChild(card);
                 });
             } catch (err) {
@@ -643,10 +711,10 @@
 
                 const test = await res.json();
 
-                // Зберігаємо ID поточного тесту
                 currentOpenTestId = test.id;
 
                 document.getElementById('listView').classList.add('hidden');
+                document.getElementById('examView').style.display = 'none'; // Ensure exam is closed
                 document.getElementById('detailView').style.display = 'block';
 
                 document.getElementById('dTitle').innerText = test.title;
@@ -687,16 +755,13 @@
             }
         }
 
-        // --- QUESTION & ANSWERS LOGIC ---
+        // --- QUESTION & ANSWERS ADMIN LOGIC ---
 
         function openQuestionModal() {
-            // Очищення полів
             document.getElementById('qText').value = '';
             document.getElementById('answersContainer').innerHTML = '';
-            // Додаємо 2 порожніх варіанти за замовчуванням
             addAnswerRow();
             addAnswerRow();
-
             document.getElementById('questionModal').style.display = 'flex';
         }
 
@@ -705,12 +770,12 @@
             const row = document.createElement('div');
             row.className = 'answer-row fade-in';
             row.innerHTML = `
-                    <input type="text" class="ans-text" placeholder="Текст відповіді">
-                    <label class="checkbox-wrapper">
-                        <input type="checkbox" class="ans-correct"> Вірна
-                    </label>
-                    <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color: var(--danger)">✕</button>
-                `;
+                        <input type="text" class="ans-text" placeholder="Текст відповіді">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" class="ans-correct"> Вірна
+                        </label>
+                        <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color: var(--danger)">✕</button>
+                    `;
             container.appendChild(row);
         }
 
@@ -721,7 +786,6 @@
                 return;
             }
 
-            // Збираємо відповіді
             const rows = document.querySelectorAll('#answersContainer .answer-row');
             const answers = [];
 
@@ -740,12 +804,11 @@
 
             const dto = {
                 title: title,
-                testId: currentOpenTestId, // ID з глобальної змінної
+                testId: currentOpenTestId,
                 answers: answers
             };
 
             try {
-                // ПРИПУЩЕННЯ: Ендпоінт для створення питання - POST /questions
                 const res = await apiFetch('/questions', {
                     method: 'POST',
                     body: JSON.stringify(dto)
@@ -755,8 +818,6 @@
 
                 closeModal('questionModal');
                 alert("Питання успішно додано!");
-
-                // Оновлюємо деталі тесту (щоб оновився лічильник питань)
                 loadTestDetails(currentOpenTestId);
 
             } catch (e) {
@@ -766,10 +827,123 @@
             }
         }
 
+        async function startExam() {
+            if (!currentOpenTestId) return;
+
+            try {
+                // Викликаємо метод контролера ExamController: [HttpPost("{examId}/start")]
+                const res = await apiFetch(`/exam/${currentOpenTestId}/start`, {
+                    method: 'POST'
+                });
+
+                if (!res.ok) throw new Error("Не вдалося почати тест");
+
+                // Контролер повертає GUID сесії (рядок)
+                const sessionId = await res.json();
+                currentSessionId = sessionId;
+
+                // Перемикаємо UI
+                document.getElementById('detailView').style.display = 'none';
+                document.getElementById('examView').style.display = 'block';
+
+                // Завантажуємо перше питання
+                loadNextQuestion();
+
+            } catch (e) {
+                alert("Помилка старту тесту: " + e.message);
+            }
+        }
+
+        async function loadNextQuestion() {
+            try {
+                document.getElementById('examQuestionText').innerText = "Завантаження...";
+                document.getElementById('examOptionsContainer').innerHTML = "";
+                document.getElementById('nextBtn').disabled = true;
+                currentSelectedAnswer = null;
+
+                // Викликаємо метод контролера: [HttpGet("next")]
+                const res = await apiFetch(`/exam/next?sessionId=${currentSessionId}`);
+
+                // Якщо 204 No Content або null - тест завершено
+                if (res.status === 204) {
+                    finishExamUI();
+                    return;
+                }
+
+                const question = await res.json();
+
+                // Якщо прийшов null в body
+                if (!question) {
+                    finishExamUI();
+                    return;
+                }
+
+                renderExamQuestion(question);
+
+            } catch (e) {
+                console.error(e);
+                alert("Помилка отримання питання");
+                finishExamEarly();
+            }
+        }
+
+        function renderExamQuestion(question) {
+            document.getElementById('examQuestionText').innerText = question.title;
+            const container = document.getElementById('examOptionsContainer');
+
+            // Припускаємо, що question.answers - це масив об'єктів { id, text }
+            // Якщо answers немає, перевірте структуру DTO
+            if (question.answers && question.answers.length > 0) {
+                question.answers.forEach(ans => {
+                    const el = document.createElement('div');
+                    el.className = 'exam-answer-option';
+                    el.innerText = ans.text;
+                    el.onclick = () => selectAnswer(el, ans.id);
+                    container.appendChild(el);
+                });
+            } else {
+                container.innerHTML = "<p>Варіанти відповідей відсутні (помилка даних)</p>";
+            }
+        }
+
+        function selectAnswer(element, answerId) {
+            // Знімаємо виділення з усіх
+            const all = document.querySelectorAll('.exam-answer-option');
+            all.forEach(x => x.classList.remove('selected'));
+
+            // Виділяємо поточний
+            element.classList.add('selected');
+            currentSelectedAnswer = answerId;
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        async function submitAndNext() {
+            // ТУТ МАЄ БУТИ ЛОГІКА ВІДПРАВКИ ВІДПОВІДІ НА СЕРВЕР
+            // Наприклад: await apiFetch('/exam/submit', { body: { sessionId, answerId: currentSelectedAnswer }})
+
+            // Оскільки в наданому контролері методу Submit немає, ми просто йдемо далі.
+            // (Але в реальному проекті обов'язково додай endpoint SubmitAnswer!)
+
+            await loadNextQuestion();
+        }
+
+        function finishExamUI() {
+            alert("Тест завершено! Вітаємо.");
+            showListView();
+        }
+
+        function finishExamEarly() {
+            if (confirm("Ви впевнені, що хочете перервати тест?")) {
+                showListView();
+            }
+        }
+
+
         // --- UI UTILS ---
 
         function showListView() {
             document.getElementById('detailView').style.display = 'none';
+            document.getElementById('examView').style.display = 'none';
             document.getElementById('listView').classList.remove('hidden');
         }
 

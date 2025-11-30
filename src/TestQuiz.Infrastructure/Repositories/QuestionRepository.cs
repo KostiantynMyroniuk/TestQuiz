@@ -31,20 +31,25 @@ namespace TestQuiz.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Question>> GetAll()
+        public async Task<Question?> GetById(int id)
         {
-            return await _context.Questions
-                                .AsNoTracking()
-                                .Include(q => q.Answers)
-                                .ToListAsync();
+            return await _context.Questions.FindAsync(id);
         }
 
         public async Task<Question?> GetByIdWithOptions(int id)
         {
             return await _context.Questions
-                            .AsNoTracking()
-                            .Include(q => q.Answers)
-                            .FirstOrDefaultAsync(t => t.Id == id);
+                                    .AsNoTracking()
+                                    .Include(q => q.Answers)
+                                    .FirstOrDefaultAsync(q => q.Id == id);
+        }
+
+        public async Task<List<int>> GetIdsByTest(int quizId)
+        {
+            return await _context.Questions
+                            .Where(t => t.TestId == quizId)
+                            .Select(q => q.Id)
+                            .ToListAsync();
         }
     }
 }

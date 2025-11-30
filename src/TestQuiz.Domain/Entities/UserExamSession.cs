@@ -9,8 +9,6 @@ namespace TestQuiz.Domain.Entities
     public class UserExamSession
     {
         public int TestId { get; set; }
-        public List<int> QuestionsId { get; set; } = new();
-        public int CurrentIndex { get; set; }
-        public DateTime StartedAt { get; set; }
+        public Queue<int> QuestionIds { get; set; } = new();
     }
 }

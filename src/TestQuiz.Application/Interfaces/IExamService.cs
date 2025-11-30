@@ -9,7 +9,7 @@ namespace TestQuiz.Application.Interfaces
 {
     public interface IExamService
     {
-        Task<QuestionDto?> GetNextQuestion(int userId, int testId);
-
+        Task<QuestionDto?> GetNextQuestion(Guid testId);
+        Task<Guid> StartSession(int quizId);
     }
 }
