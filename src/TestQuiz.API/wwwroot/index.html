@@ -831,7 +831,6 @@
             if (!currentOpenTestId) return;
 
             try {
-                // Викликаємо метод контролера ExamController: [HttpPost("{examId}/start")]
                 const res = await apiFetch(`/exam/${currentOpenTestId}/start`, {
                     method: 'POST'
                 });
@@ -918,12 +917,6 @@
         }
 
         async function submitAndNext() {
-            // ТУТ МАЄ БУТИ ЛОГІКА ВІДПРАВКИ ВІДПОВІДІ НА СЕРВЕР
-            // Наприклад: await apiFetch('/exam/submit', { body: { sessionId, answerId: currentSelectedAnswer }})
-
-            // Оскільки в наданому контролері методу Submit немає, ми просто йдемо далі.
-            // (Але в реальному проекті обов'язково додай endpoint SubmitAnswer!)
-
             await loadNextQuestion();
         }
 

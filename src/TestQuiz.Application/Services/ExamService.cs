@@ -58,7 +58,7 @@ namespace TestQuiz.Application.Services
 
             if (string.IsNullOrEmpty(json))
             {
-                throw new Exception("Session not found");
+                throw new KeyNotFoundException("Session not found");
             }
 
             var session = JsonSerializer.Deserialize<UserExamSession>(json);
@@ -76,6 +76,8 @@ namespace TestQuiz.Application.Services
             await _cache.SetStringAsync(sessionId.ToString(), updatedJson);
 
             var question = await _repository.GetByIdWithOptions(nextQuestionId);
+
+            Random.Shared.Shuffle(CollectionsMarshal.AsSpan(question.Answers));
 
             return _mapper.Map<QuestionDto>(question);
         }
